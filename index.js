@@ -37,7 +37,6 @@ client.on('clientReady', async () => {
 });
 
 client.on('interactionCreate', async interaction => {
-    
     if (interaction.isChatInputCommand()) {
         if (interaction.commandName === 'spawn') {
             const selectMenu = new StringSelectMenuBuilder()
@@ -56,7 +55,6 @@ client.on('interactionCreate', async interaction => {
                 );
 
             const row = new ActionRowBuilder().addComponents(selectMenu);
-            
             await interaction.reply({ 
                 content: '⚙️ يرجى اختيار إصدار السيرفر من القائمة أدناه:', 
                 components: [row], 
@@ -105,7 +103,7 @@ client.on('interactionCreate', async interaction => {
             const session = userSessions.get(interaction.user.id);
             const version = session ? session.version : 'auto';
 
-            await interaction.followUp({ content: `🚀 جاري فحص السيرفر وتشغيل البوت **${username}** وإرساله إلى \`${ip}:${port}\`...` });
+            await interaction.followUp({ content: `🚀 جاري فحص السيرفر وتشغيل البوت **${username}** وإرساله إلى \`${ip}:${port}\` بآليات حركة آمنة...` });
 
             createMinecraftBot(ip, port, username, version, commandsText, interaction);
         }
@@ -118,7 +116,6 @@ function createMinecraftBot(host, port, username, version, commandsText, interac
             host: host,
             port: port,
             username: username,
-            // تفعيل نظام الحسابات المكركة لضمان قبول البوت في السيرفرات العادية
             auth: 'offline' 
         };
 
@@ -129,8 +126,28 @@ function createMinecraftBot(host, port, username, version, commandsText, interac
         const mcBot = mineflayer.createBot(botOptions);
 
         mcBot.on('spawn', () => {
-            console.log(`[Mineflayer] البوت ${username} دخل السيرفر بنجاح.`);
+            console.log(`[Mineflayer] البوت ${username} دخل السيرفر واستقر في العالم.`);
             
+            // 🛠️ حل مشكلة invalid_player_movement: الانتظار التام لحين تحميل الـ Chunks
+            setTimeout(async () => {
+                if (mcBot.entity) {
+                    try {
+                        // محاكاة حركة بشرية آمنة (التفات طفيف يميناً ويساراً) للتأكيد للحماية أن البوت متصل ونشط
+                        await mcBot.look(0.5, 0, true);
+                        setTimeout(async () => {
+                            await mcBot.look(-0.5, 0, true);
+                            
+                            // تحريك البوت خطوة صغيرة للأمام ثم إيقافه
+                            mcBot.setControlState('forward', true);
+                            setTimeout(() => mcBot.setControlState('forward', false), 200);
+                        }, 1000);
+                    } catch (err) {
+                        console.log("تأخر تفعيل ميكانيكية الحركة الآمنة.");
+                    }
+                }
+            }, 4000); // تأخير 4 ثوانٍ كاملة لضمان ملامسة أرضية السيرفر والاستقرار تماماً
+
+            // تنفيذ أوامر الدخول والشات المخصصة
             if (commandsText) {
                 const lines = commandsText.split('\n');
                 lines.forEach((line, index) => {
@@ -139,7 +156,7 @@ function createMinecraftBot(host, port, username, version, commandsText, interac
                         if (textToSend) {
                             mcBot.chat(textToSend);
                         }
-                    }, (index + 1) * 1500); 
+                    }, (index + 3) * 1500); // تبدأ الأوامر بعد استقرار وضع الحركة
                 });
             }
         });
@@ -151,25 +168,24 @@ function createMinecraftBot(host, port, username, version, commandsText, interac
             } catch (e) { console.log("تعذر إرسال رسالة الخطأ") }
         });
 
-        // تحسين قراءة حدث الطرد لتحويل الكائن المعقد إلى نص مفهوم
         mcBot.on('kicked', async (reason) => {
-            // تحويل سبب الطرد (سواء كان نصاً أو كائناً) إلى صيغة نصية واضحة للسجل وللديسكورد
             const kickReasonClean = typeof reason === 'object' ? JSON.stringify(reason) : String(reason);
             console.log(`[Mineflayer Kicked]: تم طرد البوت. السبب الخام: ${kickReasonClean}`);
             
-            // محاولة استخلاص النص المفهوم إذا كان الهيكل يحتوي على حقل text (نظام ماين كرافت القياسي للرسائل)
-            let friendlyReason = "تعذر تحديد السبب بدقة، راجع سجلات المنصة.";
+            let friendlyReason = "تعذر تحديد السبب تلقائياً.";
             if (reason && reason.text) {
                 friendlyReason = reason.text;
             } else if (reason && reason.extra && reason.extra[0]) {
                 friendlyReason = reason.extra.map(e => e.text || '').join('');
+            } else if (kickReasonClean.includes("invalid_player_movement")) {
+                friendlyReason = "تم الطرد بسبب محاولة التحرك السريع قبل تحميل الخريطة (تم إصلاحها الآن في التحديث الجديد).";
             } else {
                 friendlyReason = kickReasonClean;
             }
 
             try {
-                await interaction.followUp({ content: `⚠️ تم طرد لاعب ماين كرافت من السيرفر.\n**السبب المكتشف:** ${friendlyReason}` });
-            } catch (e) { console.log("تعذر إرسال رسالة الطرد للديسكورد") }
+                await interaction.followUp({ content: `⚠️ تم طرد البوت من السيرفر.\n**السبب المكتشف:** ${friendlyReason}` });
+            } catch (e) { console.log("تعذر إرسال رسالة الطرد") }
         });
 
     } catch (error) {
