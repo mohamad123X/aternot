@@ -1,1 +1,16 @@
-
+{
+  "name": "aternot-mc-bot",
+  "version": "1.0.0",
+  "description": "Discord bot to spawn Minecraft client bots",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "mineflayer": "^4.20.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
