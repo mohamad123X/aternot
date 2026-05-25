@@ -1,0 +1,19 @@
+{
+  "name": "sentinel-swarm-bots",
+  "version": "1.0.0",
+  "description": "نظام إدارة جيش البوتات المركزي لتوزيع المهام داخل السيرفر",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "author": "Mohammed El Filali",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
