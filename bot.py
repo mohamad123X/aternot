@@ -1,5 +1,5 @@
 import discord
-from discord import app_commands  # تم إضافة مكتبة أوامر السلاش
+from discord import app_commands  # مكتبة أوامر السلاش الحديثة
 from discord.ext import commands
 import aiohttp
 import json
@@ -316,8 +316,7 @@ class TicketBot(commands.Bot):
         self.add_view(MainPersistentView())
         self.add_view(TicketOptionsView())
         self.add_view(ProblemCategoryView())
-        # 🔥 حقن وتزامن أوامر السلاش تلقائياً عند تشغيل البوت عالمياً لكي تظهر فوراً 🔥
-        await self.tree.sync()
+        await self.tree.sync() # مزامنة أوامر السلاش عالمياً
 
 bot = TicketBot()
 
@@ -326,55 +325,62 @@ async def on_ready():
     print(f"✨ Cyberpunk Core Engine online as {bot.user}")
 
 
-# 🔥 تحويل أمر الإعداد بالكامل إلى أمر سلاش احترافي (Slash Command) 🔥
-@bot.tree.command(name="setup", description="إعداد نظام التحقق والتذاكر وإنشاء اللوحة التلقائية بالسيرفر.")
-@app_commands.describe(
-    category_id="آيدي فئة الدعم (Category ID) التي ستفتح التذاكر بداخلها",
-    staff_role_id="آيدي رتبة الإدارة أو المسؤولين عن الدعم (Staff Role ID)",
-    log_channel_id="آيدي غرفة السجلات وحفظ التقييمات وبلاغات التأخير (Log Channel ID)"
-)
+# 🔥 الأمر الذكي الخارق: إعداد بنقرة واحدة وبدون أي مدخلات أو غباء برمي 🔥
+@bot.tree.command(name="setup", description="التثبيت التلقائي الشامل ونشر لوحة التذاكر والتحقق بضغطة زر واحدة.")
 @app_commands.checks.has_permissions(administrator=True)
-async def setup_verify_panel_slash(
-    interaction: discord.Interaction, 
-    category_id: str, 
-    staff_role_id: str, 
-    log_channel_id: str
-):
-    # تفادي خروج الاستجابة بنظام ديسكورد إذا تأخر جلب الروم
+async def setup_verify_panel_intelligent(interaction: discord.Interaction):
+    # إبلاغ ديسكورد بأن البوت يقوم بمعالجة البيانات ليتفادى انتهاء الوقت
     await interaction.response.defer(ephemeral=True)
     
-    try:
-        cat_id = int(category_id)
-        role_id = int(staff_role_id)
-        log_id = int(log_channel_id)
-    except ValueError:
-        await interaction.followup.send("❌ **خطأ:** يجب أن تكون جميع المدخلات عبارة عن أرقام (IDs) صالحة ومطابقة.", ephemeral=True)
-        return
+    guild = interaction.guild
 
-    category = interaction.guild.get_channel(cat_id)
-    role = interaction.guild.get_role(role_id)
-    log_channel = interaction.guild.get_channel(log_id)
+    # 1. فحص أو إنشاء رتبة الدعم الفني تلقائياً للتحكم بالتذاكر
+    staff_role = discord.utils.get(guild.roles, name="NetPulse Staff")
+    if not staff_role:
+        staff_role = await guild.create_role(
+            name="NetPulse Staff", 
+            color=discord.Color.teal(), 
+            mentionable=True,
+            reason="NetPulse Automated System Setup"
+        )
 
-    if not category or not role or not log_channel:
-        await interaction.followup.send("❌ **خطأ:** لم يتم العثور على القنوات أو الرتبة المدخلة داخل هذا السيرفر. يرجى التأكد من الأرقام.", ephemeral=True)
-        return
-
-    # حفظ الإعدادات
-    save_guild_config(interaction.guild.id, cat_id, role_id, log_id)
-
-    # إنشاء الغرفة
-    overwrites = {
-        interaction.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
-        interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, embed_links=True)
+    # 2. إنشاء فئة (Category) التذاكر المخصصة والمحجوبة عن العامة تلقائياً
+    category_overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        staff_role: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True)
     }
     
-    panel_channel = await interaction.guild.create_text_channel(
+    ticket_category = await guild.create_category(
+        name="─── NETPULSE TICKETS ───",
+        overwrites=category_overwrites,
+        reason="NetPulse Automated System Setup"
+    )
+
+    # 3. إنشاء غرفة السجلات (Log Channel) المشفرة بداخل الفئة تلقائياً
+    log_channel = await guild.create_text_channel(
+        name="🔒-ticket-logs",
+        category=ticket_category,
+        reason="NetPulse Automated System Setup"
+    )
+
+    # 4. حفظ كامل هذه الإعدادات والآيديهات المولدة ديناميكياً داخل ملف التكوين مباشرة
+    save_guild_config(guild.id, ticket_category.id, staff_role.id, log_channel.id)
+
+    # 5. إنشاء الغرفة العلنية لعامة الأعضاء لنشر البانر والزر
+    public_overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, embed_links=True)
+    }
+    
+    panel_channel = await guild.create_text_channel(
         name="🎮-verify-here",
         position=0,
-        overwrites=overwrites,
+        overwrites=public_overwrites,
         topic="NetPulse Setup - Open tickets and verify accounts here."
     )
 
+    # 6. بناء البانر الترحيبي الأنيق وإرساله مع أزرار التحكم المستمرة
     embed = discord.Embed(
         title="🎮 Account Verification Hub",
         description=(
@@ -387,14 +393,24 @@ async def setup_verify_panel_slash(
     )
     embed.set_footer(text="قم بالضغط لمرة واحدة وانتظر بضع ثوانٍ.")
     
+    # إرسال البانر في القناة الجديدة
     await panel_channel.send(embed=embed, view=MainPersistentView())
-    await interaction.followup.send(f"✅ **تم حفظ الإعدادات بنجاح!**\nتم إنشاء الروم المخصصة هنا: {panel_channel.mention}", ephemeral=True)
+    
+    # الرد على المسؤول بنجاح العملية
+    await interaction.followup.send(
+        f"✅ **تم تثبيت البوت وبناء البنية التحتية بنجاح مبهر!**\n\n"
+        f"🔹 **الروم العلنية:** {panel_channel.mention}\n"
+        f"🔹 **فئة التذاكر الجديدة:** `{ticket_category.name}`\n"
+        f"🔹 **روم السجلات المخفية:** {log_channel.mention}\n"
+        f"🔹 **رتبة الإدارة المصنوعة:** {staff_role.mention} (قم بإعطائها لنفسك ولطاقم العمل لديك فوراً ليتمكنوا من استلام التذاكر والتفاعل معها).", 
+        ephemeral=True
+    )
 
 # معالجة أخطاء الصلاحيات في أمر السلاش
-@setup_verify_panel_slash.error
+@setup_verify_panel_intelligent.error
 async def setup_error_handler(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.MissingPermissions):
-        await interaction.response.send_message("❌ هذا الأمر مخصص للإدارة العليا فقط (Administrator).", ephemeral=True)
+        await interaction.response.send_message("❌ هذا الأمر مخصص للمسؤولين وأصحاب السيرفر فقط (Administrator).", ephemeral=True)
 
 if __name__ == "__main__":
     bot.run(BOT_TOKEN)
