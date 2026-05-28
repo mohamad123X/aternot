@@ -89,21 +89,30 @@
                             <th class="p-4">Channel Identifier</th>
                             <th class="p-4">User</th>
                             <th class="p-4">Status State</th>
-                            <th class="p-4 text-right">SLA Diagnostic</th>
+                            <th class="p-4">SLA Diagnostic</th>
+                            <th class="p-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800 text-sm font-mono">
                         {% for ticket in live_tickets %}
                         <tr class="hover:bg-white/[0.02] transition">
-                            <td class="p-4 text-cyan-400 font-bold">#{{ ticket.channel }}</td>
+                            <td class="p-4 text-cyan-400 font-bold">#{{ ticket.channel_name }}</td>
                             <td class="p-4 text-slate-300">{{ ticket.user }}</td>
                             <td class="p-4">
                                 <span class="px-2 py-0.5 rounded text-xs {% if ticket.status == 'Claimed' %}bg-blue-500/10 text-blue-400 border border-blue-500/20{% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
                                     {{ ticket.status }}
                                 </span>
                             </td>
-                            <td class="p-4 text-right {% if 'Breached' in ticket.sla %}text-red-400 font-bold animate-pulse{% else %}text-emerald-400{% endif %}">
+                            <td class="p-4 {% if 'Breached' in ticket.sla %}text-red-400 font-bold animate-pulse{% else %}text-emerald-400{% endif %}">
                                 {{ ticket.sla }}
+                            </td>
+                            <td class="p-4 text-right space-x-2">
+                                <a href="/transcript/{{ ticket.channel_id }}" target="_blank" class="inline-block text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded transition duration-200">
+                                    View Log
+                                </a>
+                                <a href="/transcript/{{ ticket.channel_id }}/download" class="inline-block text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded transition duration-200">
+                                    JSON
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -166,6 +175,5 @@
             }
         });
     </script>
-    <a href="/transcript/{{ ticket.channel_id }}" target="_blank" class="text-cyan-400 hover:underline">مشاهدة السجل</a>
 </body>
 </html>
