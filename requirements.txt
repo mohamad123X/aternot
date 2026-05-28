@@ -1,0 +1,5 @@
+# Core library for Discord Bot API integration
+discord.py>=2.4.0
+
+# Asynchronous HTTP client library to connect with the Minecraft plugin API
+aiohttp>=3.10.0
