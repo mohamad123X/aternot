@@ -58,3 +58,32 @@ async def render_dashboard(request: Request):
 if __name__ == "__main__":
     # Runs the web server locally on port 8000
     uvicorn.run("dashboard.py:app", host="0.0.0.0", port=8000, reload=True)
+    from fastapi.responses import FileResponse
+
+# ... (الكود القديم كما هو، أضف السطور التالية في الأسفل) ...
+
+@app.get("/transcript/{channel_id}", response_class=HTMLResponse)
+async def view_transcript(channel_id: str, request: Request):
+    """Reads the archived ticket JSON and passes it to a cinematic web layout."""
+    file_path = f"transcripts/{channel_id}.json"
+    
+    if not os.path.exists(file_path):
+        return HTMLResponse(content="<h1 style='color:white; background:#030712; text-align:center; padding:50px;'>❌ Transcript Record Expired or Not Found</h1>", status_code=404)
+        
+    with open(file_path, "r", encoding="utf-8") as f:
+        transcript_content = json.load(f)
+        
+    return templates.TemplateResponse("transcript.html", {
+        "request": request,
+        "data": transcript_content,
+        "channel_id": channel_id
+    })
+
+@app.get("/transcript/{channel_id}/download")
+async def download_raw_json(channel_id: str):
+    """Enables one-click secure direct downloads of the raw chat log."""
+    file_path = f"transcripts/{channel_id}.json"
+    if not os.path.exists(file_path):
+        return {"error": "Requested file asset does not exist on core cluster."}
+        
+    return FileResponse(file_path, filename=f"transcript-{channel_id}.json", media_type="application/json")
